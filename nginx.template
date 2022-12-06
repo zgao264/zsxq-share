@@ -1,0 +1,145 @@
+user  nginx;
+worker_processes  auto;
+
+error_log  /var/log/nginx/error.log notice;
+pid        /var/run/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+server {
+        listen        80;
+        server_name  localhost;
+        root   "/etc/nginx/conf.d";
+
+
+
+        location /api/ {
+                proxy_ssl_server_name on;
+                proxy_ssl_name api.zsxq.com;
+                proxy_ssl_verify off;
+                proxy_pass https://api.zsxq.com/;
+                proxy_set_header  Host api.zsxq.com;
+                proxy_set_header Accept-Encoding '';
+                proxy_set_header Cookie 'zsxq_access_token=${YOUR_ACCESS_TOKEN}; abtest_env=product';
+                proxy_http_version 1.1;
+			    sub_filter_once off;
+				sub_filter_types *;
+                sub_filter 'https:\/\/files.zsxq.com' 'http:\/\/${YOUR_IP_OR_DOMAIN}\/files';
+				sub_filter '"enable_watermark":true' '"enable_watermark":false';
+        }
+
+
+		location /files/ {
+                proxy_ssl_server_name on;
+                proxy_ssl_name files.zsxq.com;
+                proxy_ssl_verify off;
+                proxy_pass https://files.zsxq.com/;
+                proxy_set_header  Host files.zsxq.com;
+				proxy_set_header referer 'https://wx.zsxq.com';
+                proxy_set_header Cookie 'zsxq_access_token=${YOUR_ACCESS_TOKEN}; abtest_env=product';
+        }
+
+
+
+        location / {
+				auth_basic "zsxq";
+				auth_basic_user_file /etc/nginx/htpasswd.txt;
+
+				if ($uri = '/'){
+					return 301 http://${YOUR_IP_OR_DOMAIN}/dweb2/index/group/init;
+				}
+
+                proxy_ssl_server_name on;
+                proxy_pass https://wx.zsxq.com;
+                proxy_set_header Host wx.zsxq.com;
+                proxy_set_header Accept-Encoding '';
+                proxy_set_header Cookie 'zsxq_access_token=${YOUR_ACCESS_TOKEN}; abtest_env=product';
+                proxy_http_version 1.1;
+                sub_filter_once off;
+				sub_filter_types *;
+				sub_filter '</head>' '<meta name="referrer" content="no-referrer"></head>';
+
+                sub_filter 'https://wx.zsxq.com' 'http://${YOUR_IP_OR_DOMAIN}';
+                sub_filter 'https://api.zsxq.com' 'http://${YOUR_IP_OR_DOMAIN}/api';
+				sub_filter 'wx.zsxq.com' '${YOUR_IP_OR_DOMAIN}';
+				sub_filter 'api.zsxq.com' '${YOUR_IP_OR_DOMAIN}/api';
+				proxy_set_header referer 'https://wx.zsxq.com';
+
+
+        }
+
+
+
+
+        location ~ /dweb2/index/group/ {
+				auth_basic "zsxq";
+				auth_basic_user_file /etc/nginx/htpasswd.txt;
+
+                proxy_ssl_server_name on;
+                proxy_pass https://wx.zsxq.com;
+                proxy_set_header Host wx.zsxq.com;
+                proxy_set_header Accept-Encoding '';
+                proxy_set_header Cookie 'zsxq_access_token=${YOUR_ACCESS_TOKEN}; abtest_env=product';
+                proxy_http_version 1.1;
+                sub_filter_once off;
+				sub_filter_types *;
+				sub_filter '</head>' '<meta name="referrer" content="no-referrer"></head>';
+                sub_filter 'https://wx.zsxq.com' 'http://${YOUR_IP_OR_DOMAIN}';
+                sub_filter 'https://api.zsxq.com' 'http://${YOUR_IP_OR_DOMAIN}/api';
+				sub_filter 'wx.zsxq.com' '${YOUR_IP_OR_DOMAIN}';
+				sub_filter 'api.zsxq.com' '${YOUR_IP_OR_DOMAIN}/api';
+				proxy_set_header referer 'https://wx.zsxq.com';
+
+        }
+
+
+		location ~ .*\.(css|js)(.*) {
+				proxy_ssl_server_name on;
+                proxy_pass https://wx.zsxq.com;
+                proxy_set_header Host wx.zsxq.com;
+                proxy_set_header Accept-Encoding '';
+
+				sub_filter_once off;
+				sub_filter_types *;
+				sub_filter '.http.handleExceptionCode' '';
+                sub_filter 'https://wx.zsxq.com' 'http://${YOUR_IP_OR_DOMAIN}';
+                sub_filter 'https://api.zsxq.com' 'http://${YOUR_IP_OR_DOMAIN}/api';
+				sub_filter 'wx.zsxq.com' '${YOUR_IP_OR_DOMAIN}';
+				sub_filter 'api.zsxq.com' '${YOUR_IP_OR_DOMAIN}/api';
+				proxy_set_header referer 'https://wx.zsxq.com';
+
+				expires 3d;
+
+		}
+
+
+		location ~ (likes|favorites|footprint|group_data|access_tokens|comments) {
+			return 404;
+		}
+
+
+	}
+}
+
+
