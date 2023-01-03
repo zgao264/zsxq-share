@@ -10,5 +10,5 @@ COPY ./nginx.template ./nginx.template
 
 EXPOSE 80/tcp
 
-CMD /bin/bash -c "envsubst < /etc/nginx/nginx.template > /etc/nginx/nginx.conf && \
-exec /usr/sbin/nginx -g 'daemon off;'"
+CMD envsubst '${YOUR_ACCESS_TOKEN},${YOUR_IP_OR_DOMAIN}' < /etc/nginx/nginx.template > /etc/nginx/nginx.conf && \
+exec /usr/sbin/nginx -g 'daemon off;'
