@@ -129,7 +129,7 @@ server {
 				sub_filter 'api.zsxq.com' '${YOUR_IP_OR_DOMAIN}/api';
 				proxy_set_header referer 'https://wx.zsxq.com';
 
-				expires 3d;
+				expires 30d;
 
 		}
 
