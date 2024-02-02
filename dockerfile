@@ -4,7 +4,7 @@ MAINTAINER "zgao264@gmail.com"
 
 WORKDIR /etc/nginx/
 
-RUN echo zsxq:"$(openssl passwd zsxq)" >./htpasswd.txt
+RUN echo touxue:"$(openssl passwd buxushuijiao)" >./htpasswd.txt
 
 COPY ./nginx.template ./nginx.template
 
