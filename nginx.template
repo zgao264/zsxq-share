@@ -134,9 +134,7 @@ server {
 		}
 
 
-		location ~ (likes|favorites|footprint|group_data|access_tokens|comments) {
-			return 404;
-		}
+		
 
 
 	}
